@@ -45,16 +45,17 @@ $ gen-fsm-simple odsfile sheetname
 The OpenDocument table is parsed for a single sheet.
 
 The sheet must contain at least 3 columns:
-- States
+- State
 - Event
 - Next state
 
-First, the first column is searched for the word "States". This marks the
-start of the transition table. 
+First, the first column is searched for the word "State". This marks the
+start of the transition table and is interpreted as a header. 
 
 All subsequent lines are interpreted as transitions for the state machine if they have entries in all three columns.
 
-All entries in the columns "States" and "Next states" are used to build the set of available states.
+All entries in the columns "State" and "Next state" are used to build the set of available states. Thus it is possible to have states without further 
+transitions to other states.
 
 ## Name of the generated finite state machine
 
