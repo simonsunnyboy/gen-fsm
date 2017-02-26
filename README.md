@@ -52,6 +52,9 @@ The sheet must contain at least 3 columns:
 First, the first column is searched for the word "State". This marks the
 start of the transition table and is interpreted as a header. 
 
+All entries before the start of the table in the first column beginning with the
+@ symbol are treated as Doxygen entries.
+
 All subsequent lines are interpreted as transitions for the state machine if they have entries in all three columns.
 
 All entries in the columns "State" and "Next state" are used to build the set of available states. Thus it is possible to have states without further 

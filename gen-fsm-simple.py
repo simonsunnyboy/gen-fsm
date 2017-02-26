@@ -59,9 +59,16 @@ prefix = gen_C_notation(fsm_sheet)
 c_file = prefix + "_fsm.c"
 h_file = prefix + ".h"
 
-# find start of data/transition definition
+doxygen_entries = []
+
+# find start of data/transition definition - and collect additional Doxygen entries
 tpos = 0
 while (tpos < len(table)) and table[tpos][0] != "State":
+	if table[tpos][0].startswith("@"):
+		this_dox = []
+		this_dox.append(table[tpos][0])
+		this_dox.append(table[tpos][1])
+		doxygen_entries.append(this_dox)
 	tpos += 1
 
 tpos += 1
@@ -100,6 +107,9 @@ cond = uniq(cond)
 
 # print summary of data
 print("Generated state machine '" + prefix + "'")
+if len(doxygen_entries) > 0:
+	for i in doxygen_entries:
+		print(i[0]+" "+i[1])
 print("Available states:")
 for i in states:
 	print(" - " + gen_C_notation(i))
@@ -110,7 +120,14 @@ for i in trans:
 
 # generate header
 f = open(h_file,'w')
-f.write("/* API header for generated statemachine '" + prefix + "' */\n")
+f.write("/**\n")
+f.write(" * API header for generated statemachine '" + prefix + "'\n")
+f.write(" * Finite State Machine Generator for C, see https://github.com/simonsunnyboy/gen-fsm\n")
+f.write(" * @file "+h_file+"\n")
+if len(doxygen_entries) > 0:
+	for i in doxygen_entries:
+		f.write(" * "+i[0]+" "+i[1]+"\n")
+f.write(" */\n")
 f.write("#ifndef " + prefix.upper() + "_H\n#define "+prefix.upper()+"_H\n")
 f.write("#include <stdint.h>\n#include <stdbool.h>\n")
 
@@ -141,7 +158,14 @@ f.close()
 
 #generate .c file
 f = open(c_file,'w')
-f.write("/* Generated statemachine '" + prefix + "' */\n")
+f.write("/**\n")
+f.write(" * Generated statemachine '" + prefix + "'\n")
+f.write(" * Finite State Machine Generator for C, see https://github.com/simonsunnyboy/gen-fsm\n")
+f.write(" * @file "+c_file+"\n")
+if len(doxygen_entries) > 0:
+	for i in doxygen_entries:
+		f.write(" * "+i[0]+" "+i[1]+"\n")
+f.write(" */\n")
 f.write("#include <stdint.h>\n#include <stdbool.h>\n")
 f.write("#include \""+h_file+"\"\n\n")
 
