@@ -75,7 +75,10 @@ Example for name "Car" will generate `Car_Fsm` and `Car_states` identifiers.
 ## Generated files
 
 Two files are generated, `$NAME_fsm.c` containing the transition logic and
-`$NAME_.h` containing the API.
+`$NAME_fsm.h` containing the API.
+
+`$NAME.c`and `$NAME.h` may be used for specific implementations. Those files
+are not generated.
 
 ## User provided implmentations
 
@@ -86,7 +89,7 @@ For each state, an entry, exit and "in state" function is to be provided.
 - The "inside state" function is always exectued beore conditions for any state transitions are checked.
 - The exit function is called upon leaving a certain state on transitions.
 
-It is recommend to implement these in their own C file, `$NAME_fsm.c`
+It is recommended to implement these in their own C file, `$NAME.c`
 
 ## Events
 

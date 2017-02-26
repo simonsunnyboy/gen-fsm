@@ -57,7 +57,7 @@ def doxygen(brief, details):
 # generate some constants
 prefix = gen_C_notation(fsm_sheet)
 c_file = prefix + "_fsm.c"
-h_file = prefix + ".h"
+h_file = prefix + "_fsm.h"
 
 doxygen_entries = []
 
@@ -131,7 +131,7 @@ f.write(" */\n")
 f.write("#ifndef " + prefix.upper() + "_H\n#define "+prefix.upper()+"_H\n")
 f.write("#include <stdint.h>\n#include <stdbool.h>\n")
 
-f.write("/** @brief enumeration of states */\n");
+f.write("/** @brief enumeration of states for statemachine '" + prefix + "' */\n");
 f.write("enum "+prefix+"_states\n{\n");
 for i in states:
 	f.write(gen_C_notation(i)+",  /**< ... */\n")
