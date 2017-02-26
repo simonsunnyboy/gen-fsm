@@ -38,9 +38,23 @@ The software uses ODSReader Copyright 2011 by Marco Conti.
 
 ## Command line options
 
-$ gen-fsm-simple <odsfile> <sheetname>
+$ gen-fsm-simple odsfile sheetname
 
 ## Input format
+
+The OpenDocument table is parsed for a single sheet.
+
+The sheet must contain at least 3 columns:
+- States
+- Event
+- Next state
+
+First, the first column is searched for the word "States". This marks the
+start of the transition table. 
+
+All subsequent lines are interpreted as transitions for the state machine if they have entries in all three columns.
+
+All entries in the columns "States" and "Next states" are used to build the set of available states.
 
 ## Name of the generated finite state machine
 
@@ -52,7 +66,7 @@ This denotes the $NAME of the generated state machine. It is used for
 - internal data types, e.q. available states, `$NAME_states`
 - destination filenames
 
-Example for name "C&a#r" will generate `Car_Fsm` and `Car_states` identifiers.
+Example for name "Car" will generate `Car_Fsm` and `Car_states` identifiers.
 
 ## Generated files
 
