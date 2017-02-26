@@ -1,4 +1,27 @@
+# Finite State Machine Generator for C (simple switch-case variant)
+# 
+# (c) 2017 by Matthias Arndt <marndt@asmsoftware.de>
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE
+#
 # needs odfpy, python-odf Ubuntu package
+#
 import ODSReader
 import sys
 from ODSReader import *
@@ -13,12 +36,12 @@ fsm_sheet = sys.argv[2]
 doc = ODSReader(ods_file)
 table = doc.getSheet(fsm_sheet)
 
-# generate valid C identifier from given input a-z 0-9 _
+# generate valid C identifier from given input A-Z a-z 0-9 _
 def gen_C_notation(input):
 	allow = string.letters + string.digits + '_'
 	return re.sub('[^%s]' % allow, '', input)
 
-# function to return uniq entries into a list
+# function to return uniq entries from a given list as a new list
 def uniq(input):
   output = []
   for x in input:
@@ -26,12 +49,15 @@ def uniq(input):
       output.append(x)
   return output
 
+# function to output a doxygen header
+def doxygen(brief, details):
+	output = "/**\n" + " * @brief " + brief +"\n * @details "+details+"\n */\n"
+	return output
+
 # generate some constants
 prefix = gen_C_notation(fsm_sheet)
-c_file = prefix + ".c"
+c_file = prefix + "_fsm.c"
 h_file = prefix + ".h"
-
-print(" Prefix: " + prefix)
 
 # find start of data/transition definition
 tpos = 0
@@ -40,9 +66,8 @@ while (tpos < len(table)) and table[tpos][0] != "State":
 
 tpos += 1
 
-print tpos
-
 # iterate row with transitions to find all states, conditionals and next states
+# lists of states, transitions and conditions are created
 states = []
 trans = []
 cond = []
@@ -50,18 +75,17 @@ while tpos < len(table):
 	this_trans = []
 	# collect states and conditions
 	current_state = table[tpos][0]
-	next_state = table[tpos][2]
 	this_cond = table[tpos][1]
+	next_state = table[tpos][2]
 	if len(current_state) > 0:
 		states.append(current_state)
 		this_trans.append(current_state)
-	if len(next_state) > 0:
-		states.append(next_state)
-		this_trans.append(next_state)
-	# collect condition
 	if len(this_cond) > 0:
 		cond.append(this_cond)
 		this_trans.append(this_cond)
+	if len(next_state) > 0:
+		states.append(next_state)
+		this_trans.append(next_state)
 
 	# only a valid transition if all entries are there
 	if len(this_trans) == 3:
@@ -73,6 +97,16 @@ while tpos < len(table):
 # create uniques for states and conditions
 states = uniq(states)
 cond = uniq(cond)
+
+# print summary of data
+print("Generated state machine '" + prefix + "'")
+print("Available states:")
+for i in states:
+	print(" - " + gen_C_notation(i))
+print("Initial state: "+gen_C_notation(states[0]))
+print("Available transitions:")
+for i in trans:
+	print(gen_C_notation(i[0]) + " --- "+gen_C_notation(i[1])+" ---> "+gen_C_notation(i[2]))
 
 # generate header
 f = open(h_file,'w')
@@ -109,31 +143,45 @@ f.close()
 f = open(c_file,'w')
 f.write("/* Generated statemachine '" + prefix + "' */\n")
 f.write("#include <stdint.h>\n#include <stdbool.h>\n")
-f.write("#include \""+h_file+"\"\n")
+f.write("#include \""+h_file+"\"\n\n")
 
+dox_header=doxygen("transition function for finite state machine '" + prefix + "'","Call this function to evaluate conditions to trigger state changes and according behaviour.")
+f.write(dox_header)
 f.write("void "+main_func+"(void)\n{\n")
 
 # prolog for initialisation
 f.write("static uint8_t st = "+gen_C_notation(states[0])+";\n")
 f.write("static bool inited = false;\n")
+f.write("/* ensure init function for initial state is called: */\n")
 f.write("if(inited == false)\n{\n"+prefix+"_Enter_"+gen_C_notation(states[0])+"();\n")
 f.write("inited = true;\n}\n")
 
-# execute current state
-f.write("/* todo: exectue in state function for selected state */\n")
+# state handler
+f.write("/* transition handling by entry state: */\n")
+f.write("switch(st)\n{\n")
+# iterate states
+for i in states:
+	f.write("case "+gen_C_notation(i)+":\n");
+	f.write(prefix+"_In_"+gen_C_notation(i)+"();\n")
 
-# handle transitions
-if len(trans) > 0:
-	for i in trans:
-		f.write("if((st == " + gen_C_notation(i[0])+ ") && (" +prefix+"_Ev_"+gen_C_notation(i[2]) + "() == true))\n{\n")
-		f.write(prefix+"_Exit_"+gen_C_notation(i[0])+"();\n")
-		f.write("st = "+gen_C_notation(i[1])+";\n")
-		f.write(prefix+"_Enter_"+gen_C_notation(i[1])+"();\n")
-		f.write("}\nelse\n");
+	# iterate transitions for this state
+	f.write("/* transitions from state '"+gen_C_notation(i)+"' to others: */\n")
+	for t in trans:
+		if(t[0] == i):
+			f.write("if (" +prefix+"_Ev_"+gen_C_notation(t[1]) + "() == true)\n")
+			f.write("{\n");
+			f.write(prefix+"_Exit_"+gen_C_notation(i)+"();\n")
+			f.write("st = "+gen_C_notation(t[2])+";\n")
+			f.write(prefix+"_Enter_"+gen_C_notation(t[2])+"();\n")
+			f.write("}\nelse\n");
+
+	f.write("{\n/* no state change */\n}\n");
+	f.write("break;\n");
+
 # final clause
-f.write("{\n/* nothing to do */\n}\n");
+f.write("default:\n/* nothing to do */\nbreak;\n};");
 
-f.write("}\n");
+f.write("return;\n }\n");
 f.write("\n");
 f.close()
 
