@@ -28,9 +28,24 @@ from ODSReader import *
 import string
 import re
 
+# basic generator options
+gen_exit = True
+
+# check command line
+if len(sys.argv) < 3:
+	print("Usage: gen-fsm-simple.py <odsfile> <sheetname> [--no-exit]")
+	exit(1)
+
 # basic inputs
 ods_file = sys.argv[1]
 fsm_sheet = sys.argv[2]
+
+# parse additional flags
+i = 3
+while i < len(sys.argv):
+	if sys.argv[i].startswith("--no-exit"):
+		gen_exit = False
+	i +=1
 
 # parse .ods file with given sheet
 doc = ODSReader(ods_file)
@@ -149,7 +164,8 @@ for i in cond:
 f.write("/* state functions: */\n")
 for i in states:
 	f.write("void "+prefix+"_Enter_"+gen_C_notation(i)+"(void);\n")
-	f.write("void "+prefix+"_Exit_"+gen_C_notation(i)+"(void);\n")
+	if gen_exit == True:
+		f.write("void "+prefix+"_Exit_"+gen_C_notation(i)+"(void);\n")
 	f.write("void "+prefix+"_In_"+gen_C_notation(i)+"(void);\n")
 
 f.write("#endif\n")
@@ -194,7 +210,8 @@ for i in states:
 		if(t[0] == i):
 			f.write("if (" +prefix+"_Ev_"+gen_C_notation(t[1]) + "() == true)\n")
 			f.write("{\n");
-			f.write(prefix+"_Exit_"+gen_C_notation(i)+"();\n")
+			if gen_exit == True:
+				f.write(prefix+"_Exit_"+gen_C_notation(i)+"();\n")
 			f.write("st = "+gen_C_notation(t[2])+";\n")
 			f.write(prefix+"_Enter_"+gen_C_notation(t[2])+"();\n")
 			f.write("}\nelse\n");

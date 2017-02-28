@@ -38,7 +38,9 @@ The software uses ODSReader Copyright 2011 by Marco Conti.
 
 ## Command line options
 
-$ gen-fsm-simple odsfile sheetname
+`$ gen-fsm-simple odsfile sheetname [--no-exit]`
+
+- The no-exit option omits the exit function call and definition.
 
 ## Input format
 
@@ -59,6 +61,8 @@ All subsequent lines are interpreted as transitions for the state machine if the
 
 All entries in the columns "State" and "Next state" are used to build the set of available states. Thus it is possible to have states without further 
 transitions to other states.
+
+Tables exported from Google Sheets (https://docs.google.com/spreadsheets/u/0/) as ODF also work.
 
 ## Name of the generated finite state machine
 
